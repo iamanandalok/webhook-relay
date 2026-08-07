@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: webhook-relay
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/webhookrelay}
+    username: ${DB_USER:webhookrelay}
+    password: ${DB_PASSWORD:webhookrelay}
+  jpa:
+    hibernate:
+      ddl-auto: validate      # schema is owned by Flyway, never by Hibernate
+    open-in-view: false
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      acks: all               # no ack until replicated: trade latency for durability
+      retries: 5
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      group-id: webhook-relay-processor
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: record
+
+relay:
+  topics:
+    events: webhook.events.v1
+    dlq: webhook.events.v1.dlq
+  outbox:
+    poll-interval-ms: 500
+    batch-size: 100
+  retry:
+    max-attempts: 4
+    initial-backoff-ms: 500
+    multiplier: 3.0
+  hmac:
+    secrets:
+      acme: ${WEBHOOK_ACME_SECRET:dev-secret-change-me}   # local/demo only -- real secrets belong in a vault, not here
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always

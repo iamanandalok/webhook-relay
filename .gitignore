@@ -2,3 +2,6 @@
 build/
 .gradle/
 !gradle/wrapper/gradle-wrapper.jar
+
+# Local agent tooling — skills live at ~/.claude/skills, not in this repo
+.claude/
